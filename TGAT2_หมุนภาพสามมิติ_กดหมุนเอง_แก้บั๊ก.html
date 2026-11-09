@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TGAT2 หมุนภาพสามมิติ — ลองกดหมุนเอง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* SMP Design System tokens (Figma "Color") — semantic / neutral only, no primitives */
+:root{
+ --primary-500:#0080ff;--primary-600:#006dd9;
+ --secondary-400:#f9c817;
+ --success-50:#edf8ed;--success-300:#8dd48c;--success-500:#4aba48;--success-700:#358433;--success-900:#215420;
+ --error-50:#ffe6e6;--error-300:#ff5454;--error-500:#ff0000;--error-600:#d61f1f;--error-900:#6b0000;
+ --accent-500:#ff0000;
+ --neutral-50:#f4f4f5;--neutral-200:#d0d1d2;--neutral-300:#babcbd;--neutral-700:#68696b;--neutral-800:#535456;--neutral-900:#424344;
+ --white:#ffffff;--black:#000000;--bg-dark:#001c38;
+ /* roles — Light */
+ --bg:var(--neutral-50);--card:var(--white);--ink:var(--neutral-900);--mute:var(--neutral-700);--line:var(--neutral-200);
+ --accent:var(--primary-600);--on-accent:var(--white);--dot-on:var(--primary-500);
+ --ok-text:var(--success-700);--ok-border:var(--success-500);--ok-bg:var(--success-50);
+ --bad-text:var(--error-600);--bad-border:var(--error-500);--bad-bg:var(--error-50);
+ --hl:var(--accent-500);--face:var(--white);--stroke:var(--black);
+ --pill-bg:var(--neutral-900);--pill-ink:var(--white);
+ padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:var(--bg-dark);--card:var(--bg-dark);--ink:var(--neutral-50);--mute:var(--neutral-300);--line:var(--neutral-800);
+ --ok-text:var(--success-700);--ok-bg:var(--success-50);--bad-text:var(--error-600);--bad-bg:var(--error-50);
+ --pill-bg:var(--neutral-50);--pill-ink:var(--neutral-900)}}
+:root[data-theme="dark"]{
+ --bg:var(--bg-dark);--card:var(--bg-dark);--ink:var(--neutral-50);--mute:var(--neutral-300);--line:var(--neutral-800);
+ --ok-text:var(--success-700);--ok-bg:var(--success-50);--bad-text:var(--error-600);--bad-bg:var(--error-50);
+ --pill-bg:var(--neutral-50);--pill-ink:var(--neutral-900)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Prompt',system-ui,sans-serif;min-height:100vh;padding:18px 14px 40px}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:22px;margin:4px 0 2px;font-weight:600}
+.sub{color:var(--mute);font-size:14px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.qtext{font-size:15px;margin:0 2px 8px;font-weight:500}
+svg.stage{width:100%;height:auto;display:block}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.opts{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:10px;max-width:640px;margin-inline:auto}
+.opt{width:calc(33.33% - 7px);border:2px solid var(--line);border-radius:14px;background:var(--card);padding:6px 4px 4px;cursor:pointer;text-align:center;font:inherit;color:var(--ink)}
+.oi{width:88%;margin:6px auto 0;background:var(--ink);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+.on{font-size:15px;padding:4px 0 2px}
+.opt.ok{border-color:var(--ok-border);background:var(--ok-bg)}
+.opt.bad{border-color:var(--bad-border);background:var(--bad-bg)}
+.opt.locked{cursor:default}
+.opt.circle{border-color:var(--hl);outline:3px solid var(--hl);outline-offset:0;border-radius:6px}
+.msg{text-align:center;margin-top:10px;font-weight:500;min-height:24px}
+.pill{display:inline-block;background:var(--pill-bg);color:var(--pill-ink);border-radius:12px;padding:8px 20px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tabs{display:flex;margin-bottom:10px;justify-content:flex-end}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:999px;font:inherit;font-size:13.5px;cursor:pointer}
+.tab.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.close{margin-left:auto}
+.popup{display:inline-block;background:var(--accent);color:var(--on-accent);border-radius:10px;padding:6px 14px;font-size:15px;font-weight:500;margin-bottom:8px}
+.cap{color:var(--mute);font-size:14px;min-height:22px;margin:6px 2px}
+.ctrl{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
+.dots{display:flex;gap:6px}.dot{width:8px;height:8px;border-radius:50%;background:var(--line)}.dot.on{background:var(--dot-on)}
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(0,28,56,.6);display:flex;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top,0px)) 12px max(14px,env(safe-area-inset-bottom,0px))}
+.overlay[hidden]{display:none}
+.sheet{width:100%;max-width:860px;max-height:100%;overflow:auto;margin:0;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.note{color:var(--mute);font-size:12.5px;line-height:1.6}
+
+/* Background and surface styling derived from preview (8).html.
+   Question shapes, options, controls and help layout remain intact. */
+:root,:root[data-theme="dark"]{
+ --bg:transparent;--card:#ffffff;--ink:#1a2438;--mute:#56617a;
+ --line:#e4eaf4;--accent:#0080ff;--on-accent:#ffffff;
+ --pill-bg:#1a2438;--pill-ink:#ffffff;
+ --face:#ffffff;--stroke:#000000;
+ --ok-text:#358433;--ok-border:#4aba48;--ok-bg:#edf8ed;
+ --bad-text:#c8292d;--bad-border:#ff0000;--bad-bg:#ffe6e6;
+}
+body{background:transparent;color:var(--ink);padding:16px}
+.wrap{
+ width:100%;max-width:860px;padding:22px;border:1px solid #e8effa;
+ border-radius:24px;
+ background:radial-gradient(100% 55% at 100% 0%,#eef6ff,transparent 65%),
+ radial-gradient(90% 50% at 0% 100%,#f4f9ff,transparent 65%),#ffffff;
+}
+.card{
+ background:#ffffff;border-color:#e4eaf4;
+ box-shadow:0 2px 6px #1237780f,0 14px 32px -14px #12377835;
+}
+#qBox > svg.stage,#stageBox > svg.stage{
+ overflow:hidden;border:1px solid #7fb8e6;border-radius:16px;
+ background:
+  linear-gradient(#ffffff44 1px,transparent 1px),
+  linear-gradient(90deg,#ffffff44 1px,transparent 1px),
+  radial-gradient(circle at 50% 0%,#ffffff55,transparent 45%),
+  linear-gradient(160deg,#6cbdf2 0%,#93d2f7 100%);
+ background-size:64px 64px,64px 64px,auto,auto;
+ background-position:center;
+}
+.btn:not(.pri),.opt{background:#ffffff}
+.opt{border-color:#dfe8f5}
+.opt.ok{background:var(--ok-bg);border-color:var(--ok-border)}
+.opt.bad{background:var(--bad-bg);border-color:var(--bad-border)}
+.opt.circle{border-color:var(--hl)}
+.btn.pri,.tab.on{background:#0080ff;border-color:#0080ff}
+.popup{background:#0080ff}
+@media(max-width:520px){body{padding:8px}.wrap{padding:12px;border-radius:17px}}
+/* New alternative: learner-controlled rotation, existing question design unchanged. */
+.manual-panel{margin:12px 0 7px;padding:13px 14px;border-radius:14px;border:1px solid #bedffd;background:linear-gradient(105deg,#edf8ff,#f7fbff)}
+.manual-intro{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.manual-intro>div{display:flex;flex-direction:column;gap:4px}
+.manual-intro strong{color:#075d9b;font-size:13px;font-weight:600}
+.manual-intro span{color:#607895;font-size:12px;line-height:1.6}
+.angle-chip{flex-shrink:0;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:#0669c1;border-radius:10px;padding:7px 12px;border:1px solid #c4e2ff;background:white;min-width:68px;text-align:center}
+.manual-buttons{display:flex;gap:9px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:11px}
+.manual-buttons .btn{font-weight:600;min-height:42px}
+.manual-buttons .spin-back{border-color:#bbdaef;color:#266b9c;background:#fff}
+.manual-buttons .spin-next{background:#0080ff;border-color:#0080ff;box-shadow:0 4px 12px #0080ff26;color:#fff}
+.manual-buttons .spin-next:hover:not(:disabled){background:#006cdb}
+.manual-buttons .btn:focus-visible{outline:3px solid #8bc4ff;outline-offset:2px}
+@media(max-width:520px){.manual-panel{padding:12px}.manual-buttons{display:grid;grid-template-columns:1fr 1.25fr;gap:7px}.manual-buttons .btn{padding:9px 7px;font-size:12px}.angle-chip{font-size:15px;min-width:58px;padding:5px 8px}.manual-intro span{font-size:11px}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>TGAT2 หมุนภาพสามมิติ</h1>
+  <div class="sub">พิจารณารูปที่โจทย์กำหนด แล้วเลือกรูปที่ได้จากการหมุนแบบเดียวกัน</div>
+
+  <div class="card" id="main">
+    <div class="qtext">จากภาพที่กำหนดให้ หากหมุนภาพแล้ว จะเกิดเป็นรูปใด ?</div>
+    <div id="qBox"></div>
+    <div class="msg" id="msg"></div>
+    <div class="row">
+      <button class="btn pri" id="howBtn">💡 วิธีคิด</button>
+      <button class="btn" id="revealBtn">ดูเฉลย</button>
+      <button class="btn" id="resetBtn">ล้างคำตอบ</button>
+    </div>
+    <div class="row" id="ansRow"></div>
+  </div>
+
+  <div class="overlay" id="how" hidden><div class="card sheet" role="dialog" aria-modal="true" aria-label="วิธีคิด">
+    <div class="tabs" id="tabs"><button class="btn close" id="closeHow">ซ่อนวิธีคิด ✕</button></div>
+    <div class="popup" id="popup"></div>
+    <div id="stageBox"></div>
+    <div class="manual-panel" aria-label="ทดลองหมุนรูปทรงด้วยตัวเอง">
+      <div class="manual-intro">
+        <div><strong>✦ ลองหมุนด้วยตัวเอง</strong><span id="manualStatus" role="status" aria-live="polite">สังเกตลูกศร แล้วลองกดหมุนรูปทีละ 90°</span></div>
+        <output class="angle-chip" id="manualAngle" aria-live="off">0°</output>
+      </div>
+      <div class="manual-buttons">
+        <button class="btn spin-back" id="spinBack" type="button" aria-label="หมุนย้อนกลับ 90 องศา" disabled>↶ ย้อนกลับ 90°</button>
+        <button class="btn pri spin-next" id="spinNext" type="button" aria-label="หมุนตามลูกศร 90 องศา">↻ หมุนตามลูกศร 90°</button>
+      </div>
+    </div>
+    <div class="cap" id="cap"></div>
+    <div class="ctrl">
+      <button class="btn" id="prev">← ก่อนหน้า</button>
+      <div class="dots" id="dots"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="replay">↺ เริ่มใหม่</button>
+        <button class="btn pri" id="next">ถัดไป →</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<script>
+// ---------- 3D model ----------
+// cell = [x,y,z] occupies [x,x+1]×[y,y+1]×[z,z+1];  x→right-down, y→left-down, z→up
+const Rp=c=>[c[2],c[1],-c[0]-1], Rm=c=>[-c[2]-1,c[1],c[0]], Rx=c=>[c[0],-c[2]-1,c[1]], Rz=c=>[-c[1]-1,c[0],c[2]], Mx=c=>[-c[0]-1,c[1],c[2]];
+// modelled from the question picture
+const A=[[0,0,0],[0,-1,0],[0,-2,0],[0,-3,0],[1,-1,0],[0,-3,1],[-1,-3,0]];
+const B=[[-1,1,-2],[0,1,-2],[1,1,-2],[2,1,-2],[2,2,-2],[2,0,-2],[2,0,-1],[0,0,-2],[0,0,-1]];
+const Aend=A.map(Rp), Bend=B.map(Rp);
+const OPTIONS=[[[0, 0, 0], [0, 0, 1], [0, 2, 0], [0, 2, 1], [1, 0, 0], [1, 1, 0], [1, 2, 0], [1, 3, 0], [2, 0, 0]], [[0, 1, 3], [1, 1, 0], [1, 1, 1], [1, 1, 2], [1, 1, 3], [2, 0, 1], [2, 0, 3], [2, 1, 1], [2, 1, 3]], [[0, 0, 0], [0, 0, 2], [0, 1, 0], [0, 1, 1], [0, 1, 2], [0, 1, 3], [0, 2, 0], [1, 0, 0], [1, 0, 2]], [[0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1], [0, 2, 1], [0, 2, 2], [0, 3, 1], [1, 0, 2], [1, 2, 2]], [[0, 3, 0], [1, 0, 0], [1, 1, 0], [1, 2, 0], [1, 3, 0], [2, 1, 0], [2, 1, 1], [2, 3, 0], [2, 3, 1]]]; // option 3 = Rp(B) = correct
+const CORRECT=2;
+
+const FACES=[
+ {n:[0,0,1],v:[[0,0,1],[1,0,1],[1,1,1],[0,1,1]]},
+ {n:[1,0,0],v:[[1,0,0],[1,1,0],[1,1,1],[1,0,1]]},
+ {n:[0,1,0],v:[[0,1,0],[0,1,1],[1,1,1],[1,1,0]]},
+ {n:[-1,0,0],v:[[0,0,0],[0,1,0],[0,1,1],[0,0,1]]},
+ {n:[0,-1,0],v:[[0,0,0],[1,0,0],[1,0,1],[0,0,1]]},
+ {n:[0,0,-1],v:[[0,0,0],[1,0,0],[1,1,0],[0,1,0]]}];
+const LW=1.8, NS='vector-effect="non-scaling-stroke"';
+const key=p=>p.join(',');
+const ck=(x,y,z)=>((x+64)*128+(y+64))*128+(z+64);
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const rot=(p,c,phi)=>{const x=p[0]-c[0],y=p[1]-c[1],z=p[2]-c[2],co=Math.cos(phi),si=Math.sin(phi);
+  return [c[0]+x*co+z*si, c[1]+y, c[2]-x*si+z*co]};
+const proj=(p,u)=>[(p[0]-p[1])*0.866*u,(p[0]+p[1])*0.5*u-p[2]*u];
+const center=v=>{const a=[0,1,2].map(i=>Math.min(...v.map(p=>p[i]))),b=[0,1,2].map(i=>Math.max(...v.map(p=>p[i]))+1);return a.map((m,i)=>(m+b[i])/2)};
+
+// flat style: coplanar faces are merged, so only real edges are drawn (no per-cube seams)
+function faces(vox,phiDeg){
+  const set=new Set(vox.map(key)),c=center(vox),phi=phiDeg*Math.PI/180,out=[];
+  for(const p of vox)for(const f of FACES){
+    if(set.has(key(add(p,f.n))))continue;
+    const nr=rot(add(f.n,c),c,phi).map((q,i)=>q-c[i]);
+    if(nr[0]+nr[1]+nr[2]<=1e-6)continue;
+    const vs=f.v.map(q=>rot(add(p,q),c,phi));
+    const ctr=[0,1,2].map(i=>f.v.reduce((s,q)=>s+q[i],0)/4);
+    const edges=[];
+    for(let k=0;k<4;k++){
+      const a=f.v[k],b=f.v[(k+1)%4];
+      const e=[0,1,2].map(i=>Math.round(((a[i]+b[i])/2-ctr[i])*2));
+      const q=add(p,e);
+      if(set.has(key(q))&&!set.has(key(add(q,f.n))))continue; // continues on the same plane
+      edges.push([k,(k+1)%4]);
+    }
+    out.push({vs,mv:f.v.map(q=>add(p,q)),edges,d:vs.reduce((s,q)=>s+q[0]+q[1]+q[2],0)/4});
+  }
+  out.sort((a,b)=>a.d-b.d);
+  const co=Math.cos(phi),si=Math.sin(phi),dl=Math.hypot(co-si,1,si+co);
+  out.cset=new Set(vox.map(c=>ck(c[0],c[1],c[2])));out.lo=[0,1,2].map(i=>Math.min(...vox.map(c=>c[i]))-0.5);out.hi=[0,1,2].map(i=>Math.max(...vox.map(c=>c[i]))+1.5);out.dir=[(co-si)/dl,1/dl,(si+co)/dl];
+  return out;
+}
+function shape(vox,{phi=0,cx=0,cy=0,u=30,fit=null,lw=null}={}){
+  const fs=faces(vox,phi),c=center(vox);
+  let ox=0,oy=0;
+  if(fit){
+    const pts=fs.flatMap(f=>f.vs.map(q=>proj(q,1)));
+    const x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),y0=Math.min(...pts.map(p=>p[1])),y1=Math.max(...pts.map(p=>p[1]));
+    u=Math.min(fit.w/(x1-x0),fit.h/(y1-y0));
+    ox=cx-((x0+x1)/2)*u; oy=cy-((y0+y1)/2)*u;
+  }else{const pc=proj(c,u);ox=cx-pc[0];oy=cy-pc[1]}
+  const w=LW;
+  const P=q=>{const p=proj(q,u);return (p[0]+ox).toFixed(1)+','+(p[1]+oy).toFixed(1)};
+  // an edge point is hidden when the ray towards the camera hits another cube
+  const occluded=pt=>{
+    const d=fs.dir,S=fs.cset,lo=fs.lo,hi=fs.hi;
+    for(let t=0.03;t<20;t+=0.12){
+      const x=pt[0]+d[0]*t,y=pt[1]+d[1]*t,z=pt[2]+d[2]*t;
+      if(S.has(ck(Math.floor(x),Math.floor(y),Math.floor(z))))return true;
+      if(x>hi[0]&&d[0]>0||y>hi[1]&&d[1]>0||z>hi[2]&&d[2]>0||x<lo[0]&&d[0]<0||y<lo[1]&&d[1]<0||z<lo[2]&&d[2]<0)return false;
+    }
+    return false;
+  };
+  const f1=n=>n.toFixed(1);
+  let fills='',lines='';
+  fs.forEach((f,i)=>{
+    const pts=f.vs.map(q=>{const p=proj(q,u);return [p[0]+ox,p[1]+oy]});
+    fills+=`<polygon points="${pts.map(q=>f1(q[0])+','+f1(q[1])).join(' ')}" fill="var(--face)" stroke="var(--face)" stroke-width="1.2" stroke-linejoin="round"/>`;
+    for(const [ea,eb] of f.edges){
+      const A=pts[ea],B=pts[eb],MA=f.mv[ea],MB=f.mv[eb],N=12;let run=[],d='';
+      const at=t=>[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t];
+      const hid=t=>occluded([MA[0]+(MB[0]-MA[0])*t,MA[1]+(MB[1]-MA[1])*t,MA[2]+(MB[2]-MA[2])*t]);
+      const flush=()=>{if(run.length>1)d+='M'+run.map(q=>f1(q[0])+','+f1(q[1])).join('L');run=[]};
+      const edge=(t0,t1)=>{ // t0 visible, t1 hidden -> last visible t (bisection)
+        let lo=t0,hi=t1;for(let i=0;i<6;i++){const m=(lo+hi)/2;if(hid(m))hi=m;else lo=m}return lo};
+      let prevT=0,prevH=hid(0);
+      if(!prevH)run.push(at(0));
+      for(let k=1;k<=N;k++){
+        const t=k/N,h=hid(t);
+        if(prevH&&!h){const e=edge(t,prevT);run.push(at(e));run.push(at(t))}   // hidden -> visible
+        else if(!prevH&&h){run.push(at(edge(prevT,t)));flush()}               // visible -> hidden
+        else if(!h)run.push(at(t));
+        prevT=t;prevH=h;
+      }
+      flush();
+      if(d)lines+=`<path d="${d}" fill="none" stroke="var(--stroke)" stroke-width="${w}" ${NS} stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+  });
+  const svg=fills+lines;
+  return {svg};
+}
+function arc(vox,{cx,cy,u}){
+  const c=center(vox),pc=proj(c,u),ox=cx-pc[0],oy=cy-pc[1],r=2.3,pts=[];
+  for(let a=155;a>=-30;a-=5){const t=a*Math.PI/180;const p=proj([c[0]+r*Math.cos(t),c[1],c[2]+r*Math.sin(t)],u);pts.push([p[0]+ox,p[1]+oy])}
+  const e=pts[pts.length-1],s=pts[pts.length-3],ang=Math.atan2(e[1]-s[1],e[0]-s[0]),L=17;
+  const head=[[e[0]+Math.cos(ang)*L,e[1]+Math.sin(ang)*L],[e[0]+Math.cos(ang+2.1)*L*0.8,e[1]+Math.sin(ang+2.1)*L*0.8],[e[0]+Math.cos(ang-2.1)*L*0.8,e[1]+Math.sin(ang-2.1)*L*0.8]];
+  const line=pts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' '),hp=head.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' ');
+  return `<g stroke-linejoin="round" stroke-linecap="round"><polyline points="${line}" fill="none" stroke="var(--black)" stroke-width="12"/><polygon points="${hp}" fill="var(--black)" stroke="var(--black)" stroke-width="6"/><polyline points="${line}" fill="none" stroke="var(--secondary-400)" stroke-width="7"/><polygon points="${hp}" fill="var(--secondary-400)"/></g>`;
+}
+const arrowR=(x,y,s=1)=>`<g transform="translate(${x},${y}) scale(${s})" fill="var(--face)" stroke="var(--stroke)" stroke-width="${LW}" stroke-linejoin="round"><path ${NS} d="M-22,-7 H6 V-15 L24,0 L6,15 V7 H-22 Z"/></g>`;
+const qmark=(x,y,s=52)=>`<text x="${x}" y="${y+s*0.3}" text-anchor="middle" font-size="${s}" font-weight="700" fill="var(--ink)" font-family="Prompt,sans-serif">?</text>`;
+
+// ---------- question (front page) ----------
+let picked=null,revealed=false;
+function renderQ(){
+  const f=(vox,cx,cy,w,h)=>shape(vox,{cx,cy,fit:{w,h}}).svg;
+  const q=`<svg class="stage" viewBox="0 0 1000 240" style="max-width:860px;margin:0 auto"><rect x="10" y="12" width="560" height="216" fill="none" stroke="var(--stroke)" stroke-width="${LW}" ${NS}/><rect x="590" y="12" width="400" height="216" fill="none" stroke="var(--stroke)" stroke-width="${LW}" ${NS}/>
+   ${f(A,140,120,180,180)}${arrowR(300,120,1.1)}${f(Aend,450,120,190,180)}
+   ${f(B,710,120,190,180)}${arrowR(865,120,1.3)}${qmark(950,120,60)}</svg>`;
+  const opts=OPTIONS.map((v,i)=>{
+    const cls=['opt'];
+    if(revealed)cls.push('locked');
+    if(revealed&&i===CORRECT)cls.push('circle');
+    if(picked===i)cls.push(i===CORRECT?'ok':'bad');
+    return `<button class="${cls.join(' ')}" data-i="${i}" aria-label="ตัวเลือก ${i+1}"><svg viewBox="0 0 160 130" style="width:100%;height:auto;display:block">${f(v,80,62,138,112)}</svg><div class="on">${i+1}.</div></button>`;
+  }).join('');
+  document.getElementById('qBox').innerHTML=q+`<div class="opts">${opts}</div>`;
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(revealed)return;picked=+b.dataset.i;renderQ()});
+  document.getElementById('msg').innerHTML=picked===null?'':(picked===CORRECT?'<span style="color:var(--ok-text)">✓ ถูกต้อง! ตัวเลือก 3 คือคำตอบ</span>':`<span style="color:var(--bad-text)">✗ ตัวเลือก ${picked+1} ยังไม่ใช่ ลองอีกครั้ง หรือกด “วิธีคิด”</span>`);
+  document.getElementById('ansRow').innerHTML=revealed?'<div class="pill">เฉลย ตัวเลือก 3.</div>':'';
+}
+
+// ---------- how-to (hidden behind the button) ----------
+const L={x:215,y:180},R={x:590,y:180},U=34;
+const SC1='พิจารณารูปที่โจทย์กำหนด',SC2='พิจารณารูปที่ต้องการหา';
+const STEPS=[
+ {s:1,pop:SC1,cap:'',st:{src:A,dup:A,yellow:true,anim:true}},
+ {s:2,pop:SC2,cap:'ลองหมุนรูปทางขวาเอง 90° แล้วกลับไปเทียบกับตัวเลือกเพื่อหาคำตอบ',st:{src:B,dup:B,yellow:true,anim:true}}
+];
+// The original automatic fade cue is preserved; only rotation is manual.
+let idx=0,raf=0,timer=0,manualAngle=0,isSpinning=false;
+const manualStatus=document.getElementById('manualStatus');
+const manualAngleLabel=document.getElementById('manualAngle');
+const spinNextBtn=document.getElementById('spinNext');
+const spinBackBtn=document.getElementById('spinBack');
+const ease=x=>x*x*(3-2*x);
+function stopMotion(){cancelAnimationFrame(raf);clearTimeout(timer);raf=0}
+function stageSVG(st,angle,arrowOpacity=0){
+  let g='';
+  if(st.frame)g+=`<rect x="30" y="50" width="740" height="260" rx="4" fill="none" stroke="var(--stroke)" stroke-width="${LW}" ${NS}/>`;
+  g+=shape(st.src,{cx:L.x,cy:L.y,u:U}).svg;
+  if(st.end)g+=arrowR(400,180)+shape(st.res,{cx:R.x,cy:R.y,u:U}).svg;
+  if(st.q)g+=arrowR(400,180)+qmark(R.x,180);
+  if(st.dup){
+    g+=arrowR(400,180)+shape(st.dup,{phi:st.anim?angle:0,cx:R.x,cy:R.y,u:U}).svg;
+    if(st.yellow&&arrowOpacity>0){
+      const alpha=Math.max(0,Math.min(1,arrowOpacity));
+      g+=`<g class="curved-motion-arrow" opacity="${alpha.toFixed(3)}">${arc(st.dup,{cx:R.x,cy:R.y,u:U})}</g>`;
+    }
+  }
+  return `<svg class="stage" viewBox="0 0 800 360" role="img" aria-label="ภาพสามมิติที่น้องกดหมุนเอง">${g}</svg>`;
+}
+function refreshManualControls(displayAngle=manualAngle){
+  manualAngleLabel.textContent=`${Math.round(displayAngle)}°`;
+  spinNextBtn.disabled=isSpinning||manualAngle>=360;
+  spinBackBtn.disabled=isSpinning||manualAngle<=0;
+  document.getElementById('replay').disabled=false;
+}
+function renderHow(angle=manualAngle,arrowOpacity=0){
+  const S=STEPS[idx];
+  const pop=document.getElementById('popup');pop.style.display=S.pop?'inline-block':'none';pop.textContent=S.pop;
+  const caption=document.getElementById('cap'); caption.textContent=S.cap; caption.style.display=S.cap?'':'none';
+  document.getElementById('stageBox').innerHTML=stageSVG(S.st,angle,arrowOpacity);
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',i+1===S.s));
+  document.getElementById('dots').innerHTML=STEPS.map((_,i)=>`<span class="dot ${i===idx?'on':''}"></span>`).join('');
+  document.getElementById('prev').disabled=idx===0;
+  document.getElementById('next').disabled=idx===STEPS.length-1;
+  refreshManualControls(angle);
+}
+function play(){
+  // Hold the original shape, fade in the yellow arrow, then fade it out.
+  // No automatic model rotation after the arrow disappears.
+  stopMotion();
+  isSpinning=false;
+  manualAngle=0;
+  manualStatus.textContent='สังเกตลูกศรสีเหลือง แล้วลองกดหมุนรูปทีละ 90°';
+  renderHow(0,0);
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    manualStatus.textContent='พร้อมแล้ว! กด “หมุนตามลูกศร 90°” เพื่อทดลอง';
+    return;
+  }
+  const SHOW_SHAPE=750,ARROW_FADE_IN=550,ARROW_HOLD=850,ARROW_FADE_OUT=550;
+  const full=SHOW_SHAPE+ARROW_FADE_IN;
+  const holdEnd=full+ARROW_HOLD;
+  const end=holdEnd+ARROW_FADE_OUT;
+  let startTime=null,arrowElement=null;
+  const tick=now=>{
+    if(startTime===null)startTime=now;
+    const elapsed=Math.min(end,now-startTime);
+    let alpha=0;
+    if(elapsed>=SHOW_SHAPE&&elapsed<full)alpha=ease((elapsed-SHOW_SHAPE)/ARROW_FADE_IN);
+    else if(elapsed>=full&&elapsed<holdEnd)alpha=1;
+    else if(elapsed>=holdEnd&&elapsed<end)alpha=1-ease((elapsed-holdEnd)/ARROW_FADE_OUT);
+    if(elapsed>=SHOW_SHAPE&&!arrowElement){
+      renderHow(0,1);
+      arrowElement=document.querySelector('#stageBox .curved-motion-arrow');
+    }
+    if(arrowElement)arrowElement.setAttribute('opacity',alpha.toFixed(3));
+    if(elapsed<end){raf=requestAnimationFrame(tick)}
+    else{
+      renderHow(0,0);
+      manualStatus.textContent='ถึงตาน้องแล้ว! กด “หมุนตามลูกศร 90°” เพื่อดูผล';
+      raf=0;
+    }
+  };
+  raf=requestAnimationFrame(tick);
+}
+function rotateManual(delta){
+  if(isSpinning)return;
+  const from=manualAngle;
+  const to=Math.max(0,Math.min(360,from+delta));
+  if(from===to)return;
+  // Clicking while the cue is fading interrupts only the cue.
+  stopMotion();
+  isSpinning=true;
+  manualStatus.textContent='กำลังหมุนรูป…';
+  refreshManualControls();
+  const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ROTATE_DURATION=reduceMotion?0:1050;
+  if(reduceMotion){
+    manualAngle=to;
+    isSpinning=false;
+    renderHow(to,0);
+    manualStatus.textContent=to===90?'หมุนครบ 90° แล้ว! ลองเทียบรูปร่างกับโจทย์':`หมุนไปแล้ว ${to}°`;
+    return;
+  }
+  let startTime=null,lastPaint=0;
+  const tick=now=>{
+    if(startTime===null)startTime=now;
+    const t=Math.min(1,(now-startTime)/ROTATE_DURATION);
+    // Render at about 30 fps to keep the shape redraw smooth on phones.
+    if(t<1&&now-lastPaint<33){raf=requestAnimationFrame(tick);return}
+    lastPaint=now;
+    renderHow(from+(to-from)*ease(t),0);
+    if(t<1)raf=requestAnimationFrame(tick);
+    else{
+      manualAngle=to;
+      isSpinning=false;
+      raf=0;
+      renderHow(to,0);
+      if(to===90)manualStatus.textContent='หมุนครบ 90° แล้ว! ลองเทียบรูปร่างกับโจทย์';
+      else if(to===360)manualStatus.textContent='หมุนครบหนึ่งรอบแล้ว กด “เริ่มใหม่” เพื่อทดลองอีกครั้ง';
+      else manualStatus.textContent=`หมุนไปแล้ว ${to}° ลองสังเกตรูปที่เปลี่ยนไป`;
+    }
+  };
+  raf=requestAnimationFrame(tick);
+}
+function go(i){idx=Math.max(0,Math.min(STEPS.length-1,i));play()}
+spinNextBtn.addEventListener('click',()=>rotateManual(90));
+spinBackBtn.addEventListener('click',()=>rotateManual(-90));
+
+const tabs=document.getElementById('tabs');
+
+const how=document.getElementById('how');
+const mainCard=document.getElementById('main');
+const howBtn=document.getElementById('howBtn');
+const closeHowBtn=document.getElementById('closeHow');
+let previousBodyOverflow='';
+const openHow=()=>{
+  previousBodyOverflow=document.body.style.overflow;
+  how.hidden=false;
+  document.body.style.overflow='hidden';
+  mainCard.inert=true;
+  go(0);
+  closeHowBtn.focus({preventScroll:true});
+};
+const closeHow=()=>{
+  how.hidden=true;
+  document.body.style.overflow=previousBodyOverflow;
+  stopMotion();
+  isSpinning=false;
+  mainCard.inert=false;
+  howBtn.focus({preventScroll:true});
+};
+// Prevent Tab and Shift+Tab from moving focus behind the open tutorial.
+how.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  const focusables=[...how.querySelectorAll('button:not([disabled])')]
+    .filter(el=>el.getClientRects().length>0);
+  if(!focusables.length){event.preventDefault();return}
+  const first=focusables[0],last=focusables[focusables.length-1];
+  if(event.shiftKey&&(document.activeElement===first||!how.contains(document.activeElement))){
+    event.preventDefault();last.focus();
+  }else if(!event.shiftKey&&(document.activeElement===last||!how.contains(document.activeElement))){
+    event.preventDefault();first.focus();
+  }
+});
+howBtn.onclick=openHow;
+how.onclick=e=>{if(e.target===how)closeHow()};
+closeHowBtn.onclick=closeHow;
+document.getElementById('revealBtn').onclick=()=>{revealed=true;renderQ()};
+document.getElementById('resetBtn').onclick=()=>{picked=null;revealed=false;renderQ()};
+document.getElementById('prev').onclick=()=>go(idx-1);
+document.getElementById('next').onclick=()=>go(idx+1);
+document.getElementById('replay').onclick=()=>play();
+document.addEventListener('keydown',e=>{if(how.hidden)return;if(e.key==='Escape'){e.preventDefault();closeHow()}else if(e.key==='ArrowRight'&&idx<STEPS.length-1){e.preventDefault();go(idx+1)}else if(e.key==='ArrowLeft'&&idx>0){e.preventDefault();go(idx-1)}});
+renderQ();
+</script>
+</body>
+</html>
